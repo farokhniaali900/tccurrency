@@ -82,6 +82,7 @@ def button_click(update:Update, context:CallbackContext) -> None:
             for title, price in rates.items():
                 result += f"{title}{(50-(len(title)+len(price)))*"-"}{price}\n"
             
-            return result
-        return "Sorry, Couldn't fetch the data."
+            query.edit_message_text(result)
+        else:
+            query.edit_message_text("Sorry, Couldn't fetch the data.")
                    
