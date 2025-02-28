@@ -1,11 +1,10 @@
-from sc import get_coin_rates
+from sc import CurrencyRates
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler
 import os
 
 # Load the Telegram bot token from an environment variable
-# TOKEN = os.environ.get('BOT_TOKENa')
-TOKEN = '7481362685:AAGM7Hm5ePDZo3Xy0KIGzUjK22WYpOaSkP8'
+TOKEN = os.environ.get('BOT_TOKEN')
 
 async def option(update: Update, context: CallbackContext) -> None:
     keyboard = [
@@ -32,11 +31,12 @@ async def button_click(update: Update, context: CallbackContext) -> None:
     await query.answer()
 
     if query.data == "coin":
-        result = "This Is a Test Request!\n\n"
-        rates = get_coin_rates()
+        result = "This Is a Test Request!"
+        fetch = CurrencyRates(query.data)
+        rates = fetch.out()
+        
         if rates:
-            for title, price in rates.items():
-                result += f"{title}{(50-(len(title)+len(price)))*'-'}{price}\n"
+            result = rates
             try:
                 await query.edit_message_text(result, reply_markup=reply_markup)
             except Exception as e:
