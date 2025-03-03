@@ -69,6 +69,7 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     else:
         try:
             if (time() - fetched_at) > 30:
+                global rates
                 rates = get_rates.out()
             if current_currency_type == 'coin':
                 await update.message.reply_text(
