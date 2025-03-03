@@ -39,8 +39,10 @@ class CurrencyRates:
         self.type = type
         
     def fetch(self):
-        if self.type == 'قیمت سکه':
+        if self.type == 'coin':
             url = 'https://www.tgju.org/coin'
+        elif self.type == 'foreign-ex':
+            url = 'https://www.tgju.org/currency'
         
         try: 
             response = requests.get(url)
@@ -52,7 +54,7 @@ class CurrencyRates:
         return response.text
     
     def sort(self, data):
-        result = ''
+        result = dict()
         soup = BeautifulSoup(data, 'html.parser')
         rows = soup.find_all('tr')
         
@@ -67,20 +69,16 @@ class CurrencyRates:
             title = columns[0].get_text() # column 0 and 1 are always static in this case.
             price = columns[1].get_text()
             
-            try:
+            try: # see if we have a price/title :
                 price_test = int(price.split(',')[0]) 
-                price += '\n' # if its a numeric price then put a single line break at the end of the line which is price
-            except:
-                try:
-                    price_test = rows[i+1].find_all('th') + rows[i+1].find_all('td') # find out if next row of title are currency pairs
+            except: # if we have a pair of title/title then :
+                try: # find out if next row of title are currency pairs :
+                    title_test = rows[i+1].find_all('th') + rows[i+1].find_all('td') 
                     test = int(price_test[1].get_text().split(',')[0])
-                except:
+                except: # if dont go to next row
                     i += 1
                     continue
-                result += '\n\n'
-                price += '\n\n' # if its a string the assum that its the title and put more line breaks
-                
-            result += f'{title}{(50-(len(title)+len(price))) * '-'}{price}' # form the response string
+            result.update({f'{title.strip()}':f'{price.strip()}'})
             i += 1
                         
         return result
