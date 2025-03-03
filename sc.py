@@ -39,7 +39,7 @@ class CurrencyRates:
         self.type = type
         
     def fetch(self):
-        if self.type == 'coin':
+        if self.type == 'قیمت سکه':
             url = 'https://www.tgju.org/coin'
         
         try: 

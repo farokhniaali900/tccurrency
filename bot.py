@@ -1,68 +1,40 @@
-from sc import CurrencyRates
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler
 import os
+from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from sc import CurrencyRates
 
-# Load the Telegram bot token from an environment variable
-TOKEN = os.environ.get('BOT_TOKEN')
-
-async def option(update: Update, context: CallbackContext) -> None:
+# Function to send the start message with persistent buttons
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     keyboard = [
-        [InlineKeyboardButton('مشاهده قیمت سکه', callback_data='coin')],
+        [KeyboardButton("قیمت سکه")]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=False)
+
+    await update.message.reply_text(
+        "Welcome to the Currency Bot! Choose an option below:",
+        reply_markup=reply_markup
+    )
+
+# Function to handle button clicks (reply keyboard works with text input)
+async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_text = update.message.text  # User's selected button text
     
-    if update.message:
-        await update.message.reply_text("لطفا یک گزینه را انتخاب کنید.", reply_markup=reply_markup)
+    if user_text == "قیمت سکه":
+        rates = CurrencyRates(user_text).out()
+        await update.message.reply_text(rates)
+    else:
+        await update.message.reply_text("Please select a valid option.")
 
-async def start(update: Update, context: CallbackContext) -> None:
-    """Handle the /start command"""
-    await update.message.reply_text("خوش آمدید")
-    await option(update, context)
-
-async def button_click(update: Update, context: CallbackContext) -> None:
-    """Handle button clicks"""
-    back_button = [
-        [InlineKeyboardButton('بازگشت', callback_data='back')]
-    ]
-    reply_markup = InlineKeyboardMarkup(back_button)
-    
-    query = update.callback_query
-    await query.answer()
-
-    if query.data == "coin":
-        result = "This Is a Test Request!"
-        fetch = CurrencyRates(query.data)
-        rates = fetch.out()
-        
-        if rates:
-            result = rates
-            try:
-                await query.edit_message_text(result, reply_markup=reply_markup)
-            except Exception as e:
-                print(f"Error editing message text: {e}")
-        else:
-            try:
-                await query.edit_message_text("Sorry, Couldn't fetch the data.")
-            except Exception as e:
-                print(f"Error editing message text: {e}")
-    elif query.data == "back":
-        keyboard = [
-            [InlineKeyboardButton('مشاهده قیمت سکه', callback_data='coin')],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        try:
-            await query.edit_message_text("لطفا یک گزینه را انتخاب کنید.", reply_markup=reply_markup)
-        except Exception as e:
-            print(f"Error editing message text: {e}")
-
-
+# Main function to start the bot
 def main():
-    """Main function"""
-    application = Application.builder().token(TOKEN).build()
-    application.add_handler(CommandHandler('start', start))
-    application.add_handler(CallbackQueryHandler(button_click))
-    application.run_polling()
+    TOKEN = os.environ.get('BOT_TOKEN')
+    
+    app = Application.builder().token(TOKEN).build()
+    
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_buttons))
+    
+    app.run_polling()
 
 if __name__ == '__main__':
     main()
